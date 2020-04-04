@@ -1,0 +1,43 @@
+---
+title: "Final Project Preliminary EDA"
+author: "Radha Patel and Srija Pinnamaneni"
+date: "April 5, 2020"
+output: html_notebook
+---
+
+### Guiding Question (i.e., Research Question):
+Make a clear statement of a single guiding/research question that will drive your analysis.  It should be phrased as a question that you will try to investigate (i.e., it should have a question mark)
+
+
+### Become acquainted with your data sources:
+We are using data from https://usafacts.org/visualizations/coronavirus-covid-19-spread-map/
+
+Where did you find them?
+We found our primary data source on USAFacts.org and it contains the number of coronavirus cases reported per day per state from 1/22/20 to 4/3/20.
+
+Who collected/maintains them?
+The data is compiled from state departments of health and state government data into one big datafram by USAFacts.
+
+When & Why were they originally collected?
+
+
+What does a case represent in each data source, and how many total cases are available?
+
+
+What are some of the variables that you plan to use
+
+
+
+### Explore intuition related to the research question
+Create some informative plots and summary statistics 
+
+
+Describe preliminary observations and intuition about the research question
+TWO Data Sources (at least)
+
+
+Primary data:  This is the main data source to be used in your investigation and it MUST NOT be loaded directly from an R package (but API's are fine for example). You should have many cases (e.g., at least hundreds--preferably many thousands), many variables including a mixture of both categorical & quantitative variables.  
+
+Other data sources: No problem for these to come from an R package--for example, the ZipGeography or ZipDemography data (from DataComputing package) might be useful when joined with primary sources as you investigate some phenomenon in the US. 
+Note: Each data source should be less than 80-100MB--the maximum file size permitted in a GitHub Repo... use sampling to create a reduced version for the purpose of the project if needed as we've done occasionally in exercises and weekly activities.
+
