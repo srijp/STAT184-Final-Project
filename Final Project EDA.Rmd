@@ -7,34 +7,93 @@ output: html_notebook
 
 ### Guiding Question (i.e., Research Question):
 Make a clear statement of a single guiding/research question that will drive your analysis.  It should be phrased as a question that you will try to investigate (i.e., it should have a question mark)
-
+What sort of relationship does population and coronavirus count have (exponential, linear)?
 
 ### Become acquainted with your data sources:
+```{r}
+library(readr)
+library(tidyr)
+library(dplyr)
+library(DataComputing)
+covid_confirmed_usafacts <- read_csv("covid_confirmed_usafacts.csv")
+```
 We are using data from https://usafacts.org/visualizations/coronavirus-covid-19-spread-map/
+We are using ZipGeogrophy from the DataComputing package to compare total populations per state to the coronavirus count.
 
 Where did you find them?
-We found our primary data source on USAFacts.org and it contains the number of coronavirus cases reported per day per state from 1/22/20 to 4/3/20.
+We found our primary data source on USAFacts.org and it contains the number of coronavirus cases reported per day per state from 1/22/20 to 4/3/20. ZipGeography is in the DataComputing package in RStudio. 
 
 Who collected/maintains them?
-The data is compiled from state departments of health and state government data into one big datafram by USAFacts.
+The coronavirus data is compiled from state departments of health and state government data by USAFacts. ZipGeography is part of the DataComputing package which was made by the authors of the Data Computing textbook for this R class.
 
 When & Why were they originally collected?
-
+In the primary data source, the data collection is ongoing and is being collected every day. The reason for collecting this data is to be able to track the spread of coronavirus across the states. ZipGeography was collected to help teach students and help students learn how to manipulate data in RStudio. 
 
 What does a case represent in each data source, and how many total cases are available?
+A case in the coronavirus data represents a increasing count of reported coronavirus cases in a county per day. A case in ZipGeography is the population per city in a state.
+```{r}
+nrow(covid_confirmed_usafacts)
+nrow(ZipGeography)
+```
+There are 3195 cases in the coronavirus data frame and 42741 cases in the ZipGeography data frame.
 
-
-What are some of the variables that you plan to use
-
-
+What are some of the variables that you plan to use?
+For the coronavirus data, we plan on usingState, and each Date with a COVID count >= 1. For ZipGeography, we plan on using State and population.
 
 ### Explore intuition related to the research question
 Create some informative plots and summary statistics 
+```{r}
+covid_per_state <-
+  covid_confirmed_usafacts %>%
+  filter(`countyFIPS` > 100)
+drop <- c('countyFIPS','County Name','stateFIPS')
+newcovid <- covid_per_state[ , !(names(covid_per_state) %in% drop)]
+CovidPlot <-
+  newcovid %>%
+  gather(key = "Date", value = "confirmedcases", "1/22/20":"4/3/20") %>%
+  mutate(Date = lubridate::mdy(Date)) %>%
+  group_by(State,Date) %>%
+  summarise(confirmedcases = sum(confirmedcases)) %>%
+  filter(confirmedcases > 0) %>%
+  arrange(State,Date)
+CovidPlot
+NewJersey <-
+  CovidPlot %>%
+  filter(State == 'NJ')
+NewJersey
+ggplot(NewJersey,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))
+```
+This shows the number of cases reported each day in New Jersey starting in March.
+```{r}
+sumStates <-
+  CovidPlot %>%
+  group_by(State) %>%
+  summarise(count = max(confirmedcases))
+sumStates
+ggplot(data=sumStates,aes(x=State,y=count))+geom_bar(stat='identity',position='stack')
+sumStates %>%
+  summarise(total = sum(count))
+```
+This plot shows the total number of cases in each state.
+
+```{r}
+popSum <-
+  ZipGeography %>%
+  group_by(State) %>%
+  filter(State != '', Population > 0) %>%
+  summarise(statepop = sum(Population)) %>%
+  arrange(statepop)
+popSum
+```
+This table shows the population in each state.
 
 
 Describe preliminary observations and intuition about the research question
-TWO Data Sources (at least)
+The coronavirus is spreading at an exponential rate. We are unsure of the relationship between the coronavirus count and the population in each state. Generally, more populated states, have a higher number of cases of coronavirus. We think that the relationship between population and coronavirus count will be linear.
 
+TWO Data Sources (at least)
+Primary data: covid_confirmed_usafacts.csv from https://usafacts.org/visualizations/coronavirus-covid-19-spread-map/
+Other data: ZipGeography from DataComputing package
 
 Primary data:  This is the main data source to be used in your investigation and it MUST NOT be loaded directly from an R package (but API's are fine for example). You should have many cases (e.g., at least hundreds--preferably many thousands), many variables including a mixture of both categorical & quantitative variables.  
 
