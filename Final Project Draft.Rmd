@@ -18,6 +18,12 @@ library(DataComputing)
 library(lubridate)
 covid_confirmed_usafacts <- read_csv("covid_confirmed_usafacts (1).csv")
 ```
+```{r}
+nrow(covid_confirmed_usafacts)
+names(covid_confirmed_usafacts)
+nrow(ZipGeography)
+names(ZipGeography)
+```
 We are using data from https://usafacts.org/visualizations/coronavirus-covid-19-spread-map/
 
 We are using ZipGeogrophy from the DataComputing package to compare total populations per state to the coronavirus count.
@@ -52,12 +58,6 @@ NewCovidPlot <-
   left_join(CovidPlot, by = c("stateFIPS" = "stateFIPS"))
 
 NewCovidPlot
-
-NewJersey <-
-  CovidPlot %>%
-  filter(State == 'NJ')
-
-ggplot(NewJersey,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))
 ```
 This shows the number of cases reported each day in New Jersey starting in March.
 
@@ -79,7 +79,8 @@ popSum <-
   filter(State != '', Population > 0) %>%
   summarise(statepop = sum(Population)) %>%
   mutate(rank = rank(State))
-popSum
+popSum %>%
+  arrange(desc(statepop))
 ```
 
 ```{r}
@@ -94,8 +95,10 @@ CovidTotalAndPop <-
   left_join(popSum %>% select(rank,statepop),
             by = c("rank" = "rank")) %>%
   mutate(covid_pop_percent = count/statepop*100)
-CovidTotalAndPop
+CovidTotalAndPop %>%
+  arrange(desc(count))
 ggplot(CovidTotalAndPop,aes(x=State,y=covid_pop_percent))+geom_bar(stat='identity',position='stack')
+ggplot(CovidTotalAndPop,aes(x=count,y=statepop))+geom_point(aes(x=count,y=statepop))
 ```
 ```{r}
 UScovid <-
@@ -104,5 +107,65 @@ UScovid <-
   summarise(casecount = sum(confirmedcases))
 UScovid
 ggplot(UScovid,aes(x=Date,y=casecount))+geom_point(aes(x=Date,y=casecount))
+```
+```{r}
+NYandNJ <-
+  CovidCasesAndPop %>%
+  group_by(rank) %>%
+  filter(max(confirmedcases) > 20000)
+ggplot(NYandNJ,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
+Group1 <-
+  CovidCasesAndPop %>%
+  group_by(rank) %>%
+  filter(max(confirmedcases) < 20000) %>%
+  filter(max(confirmedcases) > 10000)
+ggplot(Group1,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
+Group2 <-
+  CovidCasesAndPop %>%
+  group_by(rank) %>%
+  filter(max(confirmedcases) < 10000) %>%
+  filter(max(confirmedcases) > 5000)
+ggplot(Group2,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
+Group3 <-
+  CovidCasesAndPop %>%
+  group_by(rank) %>%
+  filter(max(confirmedcases) < 5000) %>%
+  filter(max(confirmedcases) > 2500)
+ggplot(Group3,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
+Group4 <-
+  CovidCasesAndPop %>%
+  group_by(rank) %>%
+  filter(max(confirmedcases) < 2500) %>%
+  filter(max(confirmedcases) > 1600)
+ggplot(Group4,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
+Group5 <-
+  CovidCasesAndPop %>%
+  group_by(rank) %>%
+  filter(max(confirmedcases) < 1600) %>%
+  filter(max(confirmedcases) > 1000)
+ggplot(Group5,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
+Group6 <-
+  CovidCasesAndPop %>%
+  group_by(rank) %>%
+  filter(max(confirmedcases) < 1000) %>%
+  filter(max(confirmedcases) > 700)
+ggplot(Group6,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
+Group7 <-
+  CovidCasesAndPop %>%
+  group_by(rank) %>%
+  filter(max(confirmedcases) < 700) %>%
+  filter(max(confirmedcases) >= 450)
+ggplot(Group7,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
+Group8 <-
+  CovidCasesAndPop %>%
+  group_by(rank) %>%
+  filter(max(confirmedcases) < 450) %>%
+  filter(max(confirmedcases) > 200)
+ggplot(Group8,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
+Group9 <-
+  CovidCasesAndPop %>%
+  group_by(rank) %>%
+  filter(max(confirmedcases) < 200)
+ggplot(Group9,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
 ```
 
