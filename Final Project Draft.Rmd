@@ -14,8 +14,10 @@ What sort of relationship does population and coronavirus count have (exponentia
 library(readr)
 library(tidyr)
 library(dplyr)
+library(rvest)
 library(DataComputing)
 library(lubridate)
+library(leaflet)
 covid_confirmed_usafacts <- read_csv("covid_confirmed_usafacts (1).csv")
 ```
 ```{r}
@@ -97,8 +99,8 @@ CovidTotalAndPop <-
   mutate(covid_pop_percent = count/statepop*100)
 CovidTotalAndPop %>%
   arrange(desc(count))
-ggplot(CovidTotalAndPop,aes(x=State,y=covid_pop_percent))+geom_bar(stat='identity',position='stack')
-ggplot(CovidTotalAndPop,aes(x=count,y=statepop))+geom_point(aes(x=count,y=statepop))
+ggplot(CovidTotalAndPop,aes(x=State,y=covid_pop_percent))+geom_bar(stat='identity',position='stack')+ geom_smooth(method = 'lm')
+ggplot(CovidTotalAndPop,aes(x=count,y=statepop))+geom_point(aes(x=count,y=statepop))+aes(size=statepop)
 ggplot(CovidTotalAndPop,aes(x=count,y=statepop))+geom_point(aes(x=count,y=statepop))+geom_smooth(method = 'lm')+xlim(0,10000)+ylim(0,30000000)
 ```
 ```{r}
@@ -169,5 +171,34 @@ Group9 <-
   group_by(rank) %>%
   filter(max(confirmedcases) < 200)
 ggplot(Group9,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
+```
+```{r}
+page <- "https://inkplant.com/code/state-latitudes-longitudes"
+tableList <- page %>%
+  read_html() %>%
+  html_nodes(css = "table") %>%
+  html_table(fill = TRUE)
+coordinates <- tableList[[1]]
+statecoordinates <-
+  coordinates[2:52,] %>%
+  rename(State = X1, Latitude = X2, Longitude = X3) %>%
+  mutate(State = as.character(State)) %>%
+  mutate(Latitude = as.numeric(Latitude)) %>%
+  mutate(Longitude = as.numeric(Longitude)) %>%
+  arrange(State) %>%
+  mutate(rank = rank(State))
+statecoordinates
+```
+```{r}
+CovidCoordinates <-
+  sumStates %>%
+  select(State,count,rank) %>%
+  left_join(statecoordinates %>% select(Latitude, Longitude,rank),
+            by = c('rank'='rank'))
+CovidCoordinates %>%
+  arrange(desc(count))
+leaflet(CovidCoordinates) %>% 
+  addTiles() %>%
+  addCircleMarkers(radius = ~ log(count/10), fillOpacity = 0.5, color="red")
 ```
 
