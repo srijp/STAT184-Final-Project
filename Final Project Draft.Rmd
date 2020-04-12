@@ -64,12 +64,10 @@ This shows the number of cases reported each day in New Jersey starting in March
 ```{r}
 sumStates <-
   NewCovidPlot %>%
-  group_by(State) %>%
+  group_by(State,rank) %>%
   summarise(count = max(confirmedcases))
 sumStates
 ggplot(data=sumStates,aes(x=State,y=count))+geom_bar(stat='identity',position='stack')
-sumStates %>%
-  summarise(total = sum(count))
 ```
 This plot shows the total number of cases in the country.
 
@@ -90,5 +88,21 @@ CovidCasesAndPop <-
   left_join(NewCovidPlot %>% select(rank,Date,confirmedcases),
              by = c("rank" = "rank"))
 CovidCasesAndPop
+CovidTotalAndPop <-
+  sumStates %>%
+  select(rank,count) %>%
+  left_join(popSum %>% select(rank,statepop),
+            by = c("rank" = "rank")) %>%
+  mutate(covid_pop_percent = count/statepop*100)
+CovidTotalAndPop
+ggplot(CovidTotalAndPop,aes(x=State,y=covid_pop_percent))+geom_bar(stat='identity',position='stack')
+```
+```{r}
+UScovid <-
+  NewCovidPlot %>%
+  group_by(Date) %>%
+  summarise(casecount = sum(confirmedcases))
+UScovid
+ggplot(UScovid,aes(x=Date,y=casecount))+geom_point(aes(x=Date,y=casecount))
 ```
 
