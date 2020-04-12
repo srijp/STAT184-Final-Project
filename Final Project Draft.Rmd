@@ -1,0 +1,94 @@
+---
+title: "Final Project Draft"
+author: "Radha Patel and Srija Pinnamaneni"
+date: "April 12, 2020"
+output: html_notebook
+---
+
+### Guiding Question (i.e., Research Question):
+
+What sort of relationship does population and coronavirus count have (exponential, linear, etc.)?
+
+### Become acquainted with your data sources
+```{r}
+library(readr)
+library(tidyr)
+library(dplyr)
+library(DataComputing)
+library(lubridate)
+covid_confirmed_usafacts <- read_csv("covid_confirmed_usafacts (1).csv")
+```
+We are using data from https://usafacts.org/visualizations/coronavirus-covid-19-spread-map/
+
+We are using ZipGeogrophy from the DataComputing package to compare total populations per state to the coronavirus count.
+
+```{r}
+covid_per_state <-
+  covid_confirmed_usafacts %>%
+  filter(`countyFIPS` > 100)
+drop <- c('countyFIPS','County Name')
+newcovid <- covid_per_state[ , !(names(covid_per_state) %in% drop)]
+
+CovidPlot <-
+  newcovid %>%
+  gather(key = "Date", value = "confirmedcases", "1/22/20":"4/3/20") %>%
+  mutate(Date = lubridate::mdy(Date)) %>%
+  mutate(State = as.character(State)) %>%
+  mutate(stateFIPS = as.numeric(stateFIPS)) %>%
+  group_by(State,stateFIPS,Date) %>%
+  summarise(confirmedcases = sum(confirmedcases)) %>%
+  filter(confirmedcases > 0) %>%
+  arrange(stateFIPS,Date)
+
+StateRank <-
+  CovidPlot %>%
+  group_by(stateFIPS) %>%
+  summarise(totalcases = sum(confirmedcases)) %>%
+  mutate(rank = rank(stateFIPS))
+
+NewCovidPlot <-
+  StateRank %>%
+  select(stateFIPS,rank) %>%
+  left_join(CovidPlot, by = c("stateFIPS" = "stateFIPS"))
+
+NewCovidPlot
+
+NewJersey <-
+  CovidPlot %>%
+  filter(State == 'NJ')
+
+ggplot(NewJersey,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))
+```
+This shows the number of cases reported each day in New Jersey starting in March.
+
+```{r}
+sumStates <-
+  NewCovidPlot %>%
+  group_by(State) %>%
+  summarise(count = max(confirmedcases))
+sumStates
+ggplot(data=sumStates,aes(x=State,y=count))+geom_bar(stat='identity',position='stack')
+sumStates %>%
+  summarise(total = sum(count))
+```
+This plot shows the total number of cases in the country.
+
+```{r}
+popSum <-
+  ZipGeography %>%
+  mutate(State = as.character(State)) %>%
+  group_by(State) %>%
+  filter(State != '', Population > 0) %>%
+  summarise(statepop = sum(Population)) %>%
+  mutate(rank = rank(State))
+popSum
+```
+
+```{r}
+CovidCasesAndPop <-
+  popSum %>%
+  left_join(NewCovidPlot %>% select(rank,Date,confirmedcases),
+             by = c("rank" = "rank"))
+CovidCasesAndPop
+```
+
