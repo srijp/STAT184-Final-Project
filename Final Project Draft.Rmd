@@ -91,14 +91,15 @@ CovidCasesAndPop <-
 CovidCasesAndPop
 CovidTotalAndPop <-
   sumStates %>%
-  select(rank,count) %>%
+  select(State,rank,count) %>%
   left_join(popSum %>% select(rank,statepop),
             by = c("rank" = "rank")) %>%
   mutate(covid_pop_percent = count/statepop*100)
 CovidTotalAndPop %>%
   arrange(desc(count))
 ggplot(CovidTotalAndPop,aes(x=State,y=covid_pop_percent))+geom_bar(stat='identity',position='stack')
-ggplot(CovidTotalAndPop,aes(x=count,y=statepop))+geom_point(aes(x=count,y=statepop))+geom_smooth(method = 'lm')
+ggplot(CovidTotalAndPop,aes(x=count,y=statepop))+geom_point(aes(x=count,y=statepop))
+ggplot(CovidTotalAndPop,aes(x=count,y=statepop))+geom_point(aes(x=count,y=statepop))+geom_smooth(method = 'lm')+xlim(0,10000)+ylim(0,30000000)
 ```
 ```{r}
 UScovid <-
