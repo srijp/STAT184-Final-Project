@@ -98,7 +98,7 @@ CovidTotalAndPop <-
 CovidTotalAndPop %>%
   arrange(desc(count))
 ggplot(CovidTotalAndPop,aes(x=State,y=covid_pop_percent))+geom_bar(stat='identity',position='stack')
-ggplot(CovidTotalAndPop,aes(x=count,y=statepop))+geom_point(aes(x=count,y=statepop))
+ggplot(CovidTotalAndPop,aes(x=count,y=statepop))+geom_point(aes(x=count,y=statepop))+geom_smooth(method = 'lm')
 ```
 ```{r}
 UScovid <-
@@ -107,6 +107,7 @@ UScovid <-
   summarise(casecount = sum(confirmedcases))
 UScovid
 ggplot(UScovid,aes(x=Date,y=casecount))+geom_point(aes(x=Date,y=casecount))
+ggplot(CovidTotalAndPop,aes(x=State,y=count))+geom_point(aes(x=State,y=count))+aes(size=statepop)
 ```
 ```{r}
 NYandNJ <-
