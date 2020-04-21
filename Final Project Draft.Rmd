@@ -11,7 +11,7 @@ Remember to look at the feedback from the draft
 As the spread of COVID-19 continues to disrupt normal, American life, we are interested in looking at the number of cases in each state. We would like to look at the number of cases in each state and see if there is any sort of relationship with its general population. Our research looks at the number of cases in the United States starting on 1/22/20 and ending on 4/3/20. Essentially, our main research question is: What sort of relationship does state population and number of coronavirus case in each state have (exponential, linear, no relationship, etc.)?
 
 ### Loading in necessary packages
-```{r}
+```{r include=FALSE}
 rm(list = ls())
 library(readr)
 library(tidyr)
@@ -23,7 +23,7 @@ library(leaflet)
 ```
 
 ### Loading in primary dataset
-```{r}
+```{r include=FALSE}
 covid_confirmed_usafacts <- read_csv("covid_confirmed_usafacts (1).csv")
 ```
 
@@ -172,95 +172,95 @@ CovidCasesAndPop
 #States are grouped by state population to make it easier to compare more populated states to each other and vice versa
 #The lower the group number, the greater the population
 #The dates displayed are from March to now because most states don't have data before March, so filtering it makes it easier to compare and understand
-Group0 <-
+Morethan10M <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
   filter(max(statepop) > 10000000) %>%
   filter(Date >= '2020-03-01')
-Group0 %>%
+Morethan10M %>%
   ggplot(aes(x=Date,y=confirmedcases))+
   geom_point(aes(x=Date,y=confirmedcases))+
   aes(colour = State)+
   labs(title = "COVID-19 over time in states with a population over 10M", y = "COVID-19 Count")
 
-Group1 <-
+In6Mto10M <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
   filter(max(statepop) <= 10000000) %>%
   filter(max(statepop) > 6000000) %>%
   filter(Date >= '2020-03-01')
-Group1 %>%
+In6Mto10M %>%
   ggplot(aes(x=Date,y=confirmedcases))+
   geom_point(aes(x=Date,y=confirmedcases))+
   aes(colour = State)+
   labs(title = "COVID-19 over time in states with a population of 6-10M", y = "COVID-19 Count")
 
-Group2 <-
+In5Mto6M <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
   filter(max(statepop) <= 6000000) %>%
   filter(max(statepop) > 5000000) %>%
   filter(Date >= '2020-03-01')
-Group2 %>%
+In5Mto6M %>%
   ggplot(aes(x=Date,y=confirmedcases))+
   geom_point(aes(x=Date,y=confirmedcases))+
   aes(colour = State)+
   labs(title = "COVID-19 over time in states with a population of 5-6M", y = "COVID-19 Count")
 
-Group3 <-
+In4Mto5M <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
   filter(max(statepop) <= 5000000) %>%
   filter(max(statepop) > 4000000) %>%
   filter(Date >= '2020-03-01')
-Group3 %>%
+In4Mto5M %>%
   ggplot(aes(x=Date,y=confirmedcases))+
   geom_point(aes(x=Date,y=confirmedcases))+
   aes(colour = State)+
   labs(title = "COVID-19 over time in states with a population of 4-5M", y = "COVID-19 Count")
 
-Group4 <-
+In2.5Mto4M <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
   filter(max(statepop) <= 4000000) %>%
   filter(max(statepop) > 2500000) %>%
   filter(Date >= '2020-03-01')
-Group4 %>%
+In2.5Mto4M %>%
   ggplot(aes(x=Date,y=confirmedcases))+
   geom_point(aes(x=Date,y=confirmedcases))+
   aes(colour = State)+
   labs(title = "COVID-19 over time in states with a population of 2.5-4M", y = "COVID-19 Count")
 
-Group5 <-
+In1.5to2.5M <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
   filter(max(statepop) <= 2500000) %>%
   filter(max(statepop) > 1500000) %>%
   filter(Date >= '2020-03-01')
-Group5 %>%
+In1.5to2.5M %>%
   ggplot(aes(x=Date,y=confirmedcases))+
   geom_point(aes(x=Date,y=confirmedcases))+
   aes(colour = State)+
   labs(title = "COVID-19 over time in states with a population of 1.5-2.5M", y = "COVID-19 Count")
 
-Group6 <-
+In800Kto1.5M <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
   filter(max(statepop) <= 1500000) %>%
   filter(max(statepop) > 800000) %>%
   filter(Date >= '2020-03-01')
-Group6 %>%
+In800Kto1.5M %>%
   ggplot(aes(x=Date,y=confirmedcases))+
   geom_point(aes(x=Date,y=confirmedcases))+
   aes(colour = State)+
   labs(title = "COVID-19 over time in states with a population of 800K-1.5M", y = "COVID-19 Count")
 
-Group7 <-
+Below800K <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
   filter(max(statepop) <= 800000) %>%
   filter(Date >= '2020-03-01')
-Group7 %>%
+Below800K %>%
   ggplot(aes(x=Date,y=confirmedcases))+
   geom_point(aes(x=Date,y=confirmedcases))+
   aes(colour = State)+
