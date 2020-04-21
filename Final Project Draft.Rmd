@@ -1,15 +1,16 @@
 ---
-title: "Final Project Draft"
+title: "STAT 184: Final Project"
 author: "Radha Patel and Srija Pinnamaneni"
-date: "April 12, 2020"
+date: "April 24, 2020"
 output: html_notebook
 ---
+Remember to look at the feedback from the draft
 
-### Guiding Question (i.e., Research Question):
+### Topic Overview
 
-What sort of relationship does population and coronavirus count have (exponential, linear, etc.)?
+As the spread of COVID-19 continues to disrupt normal, American life, we are interested in looking at the number of cases in each state. We would like to look at the number of cases in each state and see if there is any sort of relationship with its general population. Our research looks at the number of cases in the United States starting on 1/22/20 and ending on 4/3/20. Essentially, our main research question is: What sort of relationship does state population and number of coronavirus case in each state have (exponential, linear, no relationship, etc.)?
 
-### Become acquainted with your data sources
+### Loading in necessary packages
 ```{r}
 library(readr)
 library(tidyr)
@@ -18,18 +19,26 @@ library(rvest)
 library(DataComputing)
 library(lubridate)
 library(leaflet)
+```
+
+### Loading in primary dataset
+```{r}
 covid_confirmed_usafacts <- read_csv("covid_confirmed_usafacts (1).csv")
 ```
+
+Our primary data set is a data table containing cases that represent the number of coronavirus states per county in the United States. This was found on the website: https://usafacts.org/visualizations/coronavirus-covid-19-spread-map/ Our second data set is the ZipGeography data table found in the DataComputing package for use in R.
+
+### Preliminary Analysis of Data
 ```{r}
 nrow(covid_confirmed_usafacts)
 names(covid_confirmed_usafacts)
 nrow(ZipGeography)
 names(ZipGeography)
 ```
-We are using data from https://usafacts.org/visualizations/coronavirus-covid-19-spread-map/
+Using the nrow function, we determined that there are 3195 cases in covid_confirmed_usafacts data table and 42741 cases in the ZipGeography data table. There are 84 variables in covid_confirmed_usafacts with the first four being countyFIPS, County Name, State, and stateFIPS. The rest of the variables are the dates starting from 1/22/20 to 4/10/20. For ZipGeography, there are 13 variables called State, Population, HousingUnits, LandArea, WaterArea, CityName, PostOfficeName, County, AreaCode, Timezone, Latitude, Longitude, and ZIP. 
 
-We are using ZipGeogrophy from the DataComputing package to compare total populations per state to the coronavirus count.
 
+### Cleaning the Downloaded Data for Use and assigning Ranks to States for future use
 ```{r}
 covid_per_state <-
   covid_confirmed_usafacts %>%
@@ -61,18 +70,32 @@ NewCovidPlot <-
 
 NewCovidPlot
 ```
-This shows the number of cases reported each day in New Jersey starting in March.
 
+### Looking at US Corona count increasing over time
+```{r}
+#explain what this is/signifies/what it tells us after graph
+UScovid <-
+  NewCovidPlot %>%
+  group_by(Date) %>%
+  summarise(casecount = sum(confirmedcases))
+UScovid
+ggplot(UScovid,aes(x=Date,y=casecount))+geom_point(aes(x=Date,y=casecount))
+```
+
+### Looking at the Number of Cases by State
+To start, we wanted to look at the number of cases in each state. We used the state abbreviation and added the confirmed cases per county together to find the total count for each state. First is the table showing the state and coronavirus case count, and second is a bar graph illustrating the number of coronavirus cases per state.
 ```{r}
 sumStates <-
   NewCovidPlot %>%
-  group_by(State,rank) %>%
+  group_by(State, rank) %>%
   summarise(count = max(confirmedcases))
 sumStates
-ggplot(data=sumStates,aes(x=State,y=count))+geom_bar(stat='identity',position='stack')
+ggplot(data=sumStates,aes(x=State,y=count))+geom_bar(stat='identity',position='stack')+theme(axis.text.x = element_text(angle = 90))
 ```
-This plot shows the total number of cases in the country.
+Looking at the number of coronavirus cases per state (as seen in the graph above), the state with an overwhelming number of cases in NY with NJ coming in second. The state with the least number of cases is WY. Now that we have looked the number of coronavirus cases in each state, we can look how this compares to the total state population. 
 
+### Finding the total state population
+To compare the total population per state with the number of coronavirus cases in each state, the total population per state needs to be calculated from the ZipGeography data table.
 ```{r}
 popSum <-
   ZipGeography %>%
@@ -85,92 +108,92 @@ popSum %>%
   arrange(desc(statepop))
 ```
 
+# Finding the Percent of the Population with COVID-19
+Now that we found the population with COVID-19 in each state and the total population in each state, we can find the percent of the population with COVID-19. We can do this by dividing the count (population affected by COVID-19) by the total state population. The table below shows the percent of the population affected.
+```{r}
+CovidTotalAndPop <-
+  sumStates %>%
+  select(State,rank,count) %>%
+  left_join(popSum %>% select(rank,statepop),
+            by = c("rank" = "rank")) %>%
+  mutate(covid_pop_percent = count/statepop*100) %>%
+  mutate(lowcount = count <= 2000)
+
+CovidTotalAndPop %>%
+  arrange(covid_pop_percent)
+
+ggplot(CovidTotalAndPop,aes(x=State,y=covid_pop_percent))+ geom_bar(stat='identity',position='stack')+ geom_smooth(method = 'lm')+theme(axis.text.x = element_text(angle = 90))
+```
+The bar graph illustrates the percent of coronavirus victims as a percent of the total state population for each state. Similar to the bar graph that depicted coronavirus cases and state, the state with the largest percent of the population with COVID-19 is NY with NJ coming in second again. The state with the lowest percent is WV.
+
+
+```{r}
+ggplot(CovidTotalAndPop,aes(x=count,y=covid_pop_percent))+geom_point(aes(x=count,y=covid_pop_percent))+aes(size=statepop)
+```
+
+
+```{r}
+CovidTotalAndPop %>%
+  filter(State != "NY") %>%
+  filter(State !="NJ") %>%
+  ggplot(aes(x=count,y=statepop))+geom_text(aes(label=State))+geom_smooth(method = 'lm')+facet_wrap(~lowcount, scales='free')
+```
+
+
 ```{r}
 CovidCasesAndPop <-
   popSum %>%
   left_join(NewCovidPlot %>% select(rank,Date,confirmedcases),
              by = c("rank" = "rank"))
 CovidCasesAndPop
-CovidTotalAndPop <-
-  sumStates %>%
-  select(State,rank,count) %>%
-  left_join(popSum %>% select(rank,statepop),
-            by = c("rank" = "rank")) %>%
-  mutate(covid_pop_percent = count/statepop*100)
-CovidTotalAndPop %>%
-  arrange(desc(count))
-ggplot(CovidTotalAndPop,aes(x=State,y=covid_pop_percent))+geom_bar(stat='identity',position='stack')+ geom_smooth(method = 'lm')
-ggplot(CovidTotalAndPop,aes(x=count,y=statepop))+geom_point(aes(x=count,y=statepop))+aes(size=statepop)
-ggplot(CovidTotalAndPop,aes(x=count,y=statepop))+geom_point(aes(x=count,y=statepop))+geom_smooth(method = 'lm')+xlim(0,10000)+ylim(0,30000000)
-```
-```{r}
-UScovid <-
-  NewCovidPlot %>%
-  group_by(Date) %>%
-  summarise(casecount = sum(confirmedcases))
-UScovid
-ggplot(UScovid,aes(x=Date,y=casecount))+geom_point(aes(x=Date,y=casecount))
-ggplot(CovidTotalAndPop,aes(x=State,y=count))+geom_point(aes(x=State,y=count))+aes(size=statepop)
-```
-```{r}
-NYandNJ <-
+
+Group0 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
-  filter(max(confirmedcases) > 20000)
-ggplot(NYandNJ,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
+  filter(max(statepop) > 10000000)
+ggplot(Group0,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
 Group1 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
-  filter(max(confirmedcases) < 20000) %>%
-  filter(max(confirmedcases) > 10000)
+  filter(max(statepop) < 10000000) %>%
+  filter(max(statepop) > 6000000)
 ggplot(Group1,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
 Group2 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
-  filter(max(confirmedcases) < 10000) %>%
-  filter(max(confirmedcases) > 5000)
+  filter(max(statepop) < 6000000) %>%
+  filter(max(statepop) > 5000000)
 ggplot(Group2,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
 Group3 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
-  filter(max(confirmedcases) < 5000) %>%
-  filter(max(confirmedcases) > 2500)
+  filter(max(statepop) < 5000000) %>%
+  filter(max(statepop) > 4000000)
 ggplot(Group3,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
 Group4 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
-  filter(max(confirmedcases) < 2500) %>%
-  filter(max(confirmedcases) > 1600)
+  filter(max(statepop) < 4000000) %>%
+  filter(max(statepop) > 2500000)
 ggplot(Group4,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
 Group5 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
-  filter(max(confirmedcases) < 1600) %>%
-  filter(max(confirmedcases) > 1000)
+  filter(max(statepop) < 2500000) %>%
+  filter(max(statepop) > 1500000)
 ggplot(Group5,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
 Group6 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
-  filter(max(confirmedcases) < 1000) %>%
-  filter(max(confirmedcases) > 700)
+  filter(max(statepop) < 1500000) %>%
+  filter(max(statepop) > 1000000)
 ggplot(Group6,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
 Group7 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
-  filter(max(confirmedcases) < 700) %>%
-  filter(max(confirmedcases) >= 450)
+  filter(max(statepop) < 1000000) %>%
+  filter(max(statepop) > 400000)
 ggplot(Group7,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
-Group8 <-
-  CovidCasesAndPop %>%
-  group_by(rank) %>%
-  filter(max(confirmedcases) < 450) %>%
-  filter(max(confirmedcases) > 200)
-ggplot(Group8,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
-Group9 <-
-  CovidCasesAndPop %>%
-  group_by(rank) %>%
-  filter(max(confirmedcases) < 200)
-ggplot(Group9,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
 ```
 ```{r}
 page <- "https://inkplant.com/code/state-latitudes-longitudes"
@@ -189,6 +212,7 @@ statecoordinates <-
   mutate(rank = rank(State))
 statecoordinates
 ```
+
 ```{r}
 CovidCoordinates <-
   sumStates %>%
