@@ -12,6 +12,7 @@ As the spread of COVID-19 continues to disrupt normal, American life, we are int
 
 ### Loading in necessary packages
 ```{r}
+rm(list = ls())
 library(readr)
 library(tidyr)
 library(dplyr)
@@ -80,7 +81,8 @@ UScovid <- #Creates a table of the covid count per data regardless of state
 UScovid
 UScovid %>% #Displays a covid count over time graph for the United States
   ggplot(aes(x=Date,y=casecount))+
-  geom_point(aes(x=Date,y=casecount))
+  geom_point(aes(x=Date,y=casecount))+
+  labs(title = "COVID-19 Count in United States over Time", y = "COVID-19 Count")
 ```
 
 ### Looking at the Number of Cases by State
@@ -94,7 +96,8 @@ sumStates
 sumStates %>% #Creates a bar graph to show the COVID count per state
   ggplot(aes(x=State,y=count))+
   geom_bar(stat='identity',position='stack')+
-  theme(axis.text.x = element_text(angle = 90))
+  theme(axis.text.x = element_text(angle = 90))+
+  labs(title = "COVID-19 Count per State", y = "COVID-19 Count")
 ```
 Looking at the number of coronavirus cases per state (as seen in the graph above), the state with an overwhelming number of cases in NY with NJ coming in second. The state with the least number of cases is WY. Now that we have looked the number of coronavirus cases in each state, we can look how this compares to the total state population. 
 
@@ -121,8 +124,7 @@ CovidTotalAndPop <- #The tables of state population (StatePop) and the coronavir
   select(State,rank,count) %>%
   left_join(StatePop %>% select(rank,statepop),
             by = c("rank" = "rank")) %>%
-  mutate(covid_pop_percent = count/statepop*100) %>% #Creates a percent per state to represent the proportion of the state population has tested positive COVID
-  mutate(lowcount = count <= 2000) #If the COVID count in the state is less than or equal to 2000, then TRUE will be assigned to the lowcount classifier. Otherwise, FALSE will be assigned.
+  mutate(covid_pop_percent = count/statepop*100) #Creates a percent per state to represent the proportion of the state population has tested positive COVID
 
 CovidTotalAndPop %>%
   arrange(covid_pop_percent)
@@ -130,7 +132,8 @@ CovidTotalAndPop %>% #Creates a bar graph that shows the COVID count in each sta
   ggplot(aes(x=State,y=covid_pop_percent))+
   geom_bar(stat='identity',position='stack')+
   geom_smooth(method = 'lm')+
-  theme(axis.text.x = element_text(angle = 90))
+  theme(axis.text.x = element_text(angle = 90))+
+  labs(title = "Percent of State Population that has contracted COVID-19", y = "Percentage")
 ```
 The bar graph illustrates the percent of coronavirus victims as a percent of the total state population for each state. Similar to the bar graph that depicted coronavirus cases and state, the state with the largest percent of the population with COVID-19 is NY with NJ coming in second again. The state with the lowest percent is WV.
 
@@ -139,18 +142,22 @@ The bar graph illustrates the percent of coronavirus victims as a percent of the
 CovidTotalAndPop %>% #Creates a scatterplot that shows the COVID count per state and the percent of the population who tested positive for COVID-19.
   #The size of the glyph also represents the size of the state population
   ggplot(aes(x=count,y=covid_pop_percent,size=statepop))+
-  geom_point(aes(x=count,y=covid_pop_percent))
+  geom_point(aes(x=count,y=covid_pop_percent))+
+  labs(title = "Count vs Percent of Population that has COVID-19 per State",
+       x = "COVID-19 Count", y = "Percentage", size = "State Population")
 ```
 
 
 ```{r}
 CovidTotalAndPop %>% #Creates a graph comparing the COVID count and the state population.
   #Each state is represented as a glyph as the state's acronym.
+  #Removed New York and New Jersey because they are outliers
   filter(State != "NY") %>%
   filter(State !="NJ") %>%
   ggplot(aes(x=count,y=statepop))+
-  geom_text(aes(label=State))+
-  facet_wrap(~lowcount, scales='free')
+  geom_text(aes(label=State),check_overlap = TRUE)+
+  labs(title = "COVID-19 Count vs Population of State (excluding outliers)",
+       x = "COVID-19 Count", y = "State Population")
 ```
 
 
@@ -164,7 +171,7 @@ CovidCasesAndPop
 #Scatterplots of COVID count over time are created per state
 #States are grouped by state population to make it easier to compare more populated states to each other and vice versa
 #The lower the group number, the greater the population
-#The dates displayed are from March to now because some states don't have data before March and some have extensive data before March, so filtering it makes it easier to compare and understand
+#The dates displayed are from March to now because most states don't have data before March, so filtering it makes it easier to compare and understand
 Group0 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
@@ -173,83 +180,91 @@ Group0 <-
 Group0 %>%
   ggplot(aes(x=Date,y=confirmedcases))+
   geom_point(aes(x=Date,y=confirmedcases))+
-  aes(colour = State)
+  aes(colour = State)+
+  labs(title = "COVID-19 over time in states with a population over 10M", y = "COVID-19 Count")
 
 Group1 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
-  filter(max(statepop) < 10000000) %>%
+  filter(max(statepop) <= 10000000) %>%
   filter(max(statepop) > 6000000) %>%
   filter(Date >= '2020-03-01')
 Group1 %>%
   ggplot(aes(x=Date,y=confirmedcases))+
   geom_point(aes(x=Date,y=confirmedcases))+
-  aes(colour = State)
+  aes(colour = State)+
+  labs(title = "COVID-19 over time in states with a population of 6-10M", y = "COVID-19 Count")
 
 Group2 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
-  filter(max(statepop) < 6000000) %>%
+  filter(max(statepop) <= 6000000) %>%
   filter(max(statepop) > 5000000) %>%
   filter(Date >= '2020-03-01')
 Group2 %>%
   ggplot(aes(x=Date,y=confirmedcases))+
   geom_point(aes(x=Date,y=confirmedcases))+
-  aes(colour = State)
+  aes(colour = State)+
+  labs(title = "COVID-19 over time in states with a population of 5-6M", y = "COVID-19 Count")
 
 Group3 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
-  filter(max(statepop) < 5000000) %>%
+  filter(max(statepop) <= 5000000) %>%
   filter(max(statepop) > 4000000) %>%
   filter(Date >= '2020-03-01')
 Group3 %>%
   ggplot(aes(x=Date,y=confirmedcases))+
   geom_point(aes(x=Date,y=confirmedcases))+
-  aes(colour = State)
+  aes(colour = State)+
+  labs(title = "COVID-19 over time in states with a population of 4-5M", y = "COVID-19 Count")
 
 Group4 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
-  filter(max(statepop) < 4000000) %>%
+  filter(max(statepop) <= 4000000) %>%
   filter(max(statepop) > 2500000) %>%
   filter(Date >= '2020-03-01')
 Group4 %>%
   ggplot(aes(x=Date,y=confirmedcases))+
   geom_point(aes(x=Date,y=confirmedcases))+
-  aes(colour = State)
+  aes(colour = State)+
+  labs(title = "COVID-19 over time in states with a population of 2.5-4M", y = "COVID-19 Count")
 
 Group5 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
-  filter(max(statepop) < 2500000) %>%
+  filter(max(statepop) <= 2500000) %>%
   filter(max(statepop) > 1500000) %>%
   filter(Date >= '2020-03-01')
 Group5 %>%
   ggplot(aes(x=Date,y=confirmedcases))+
   geom_point(aes(x=Date,y=confirmedcases))+
-  aes(colour = State)
+  aes(colour = State)+
+  labs(title = "COVID-19 over time in states with a population of 1.5-2.5M", y = "COVID-19 Count")
 
 Group6 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
-  filter(max(statepop) < 1500000) %>%
+  filter(max(statepop) <= 1500000) %>%
   filter(max(statepop) > 800000) %>%
   filter(Date >= '2020-03-01')
 Group6 %>%
   ggplot(aes(x=Date,y=confirmedcases))+
   geom_point(aes(x=Date,y=confirmedcases))+
-  aes(colour = State)
+  aes(colour = State)+
+  labs(title = "COVID-19 over time in states with a population of 800K-1.5M", y = "COVID-19 Count")
 
 Group7 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
-  filter(max(statepop) < 800000) %>%
+  filter(max(statepop) <= 800000) %>%
   filter(Date >= '2020-03-01')
 Group7 %>%
   ggplot(aes(x=Date,y=confirmedcases))+
   geom_point(aes(x=Date,y=confirmedcases))+
-  aes(colour = State)
+  aes(colour = State)+
+  labs(title = "COVID-19 over time in states with a population below 800K", y = "COVID-19 Count")
 #Each graph has 5, 6, or 7 states represented
 ```
 ```{r}
