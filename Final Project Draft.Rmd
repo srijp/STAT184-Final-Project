@@ -16,7 +16,7 @@ library(readr)
 library(tidyr)
 library(dplyr)
 library(rvest)
-library(DataComputing)
+library(DataComputing) #Secondary dataset ZipGeography is in this package
 library(lubridate)
 library(leaflet)
 ```
@@ -42,167 +42,226 @@ Using the nrow function, we determined that there are 3195 cases in covid_confir
 ```{r}
 covid_per_state <-
   covid_confirmed_usafacts %>%
-  filter(`countyFIPS` > 100)
+  filter(`countyFIPS` > 100) #Filters out the data for all the states that are separated by county
 drop <- c('countyFIPS','County Name')
-newcovid <- covid_per_state[ , !(names(covid_per_state) %in% drop)]
+newcovid <- covid_per_state[ , !(names(covid_per_state) %in% drop)] #Drops countyFIPS and County Name because we do not have use for county data
 
 CovidPlot <-
   newcovid %>%
-  gather(key = "Date", value = "confirmedcases", "1/22/20":"4/3/20") %>%
-  mutate(Date = lubridate::mdy(Date)) %>%
-  mutate(State = as.character(State)) %>%
-  mutate(stateFIPS = as.numeric(stateFIPS)) %>%
+  gather(key = "Date", value = "confirmedcases", "1/22/20":"4/3/20") %>% #Narrows the data so that there aren't individual columns based on date, but one Date column that has all the dates listed in it and the corresponding counts
+  mutate(Date = lubridate::mdy(Date)) %>% #Mutates dates to be in mdy format
+  mutate(State = as.character(State)) %>% #Mutates all values of State to be a character string
+  mutate(stateFIPS = as.numeric(stateFIPS)) %>% #Mutates StateFIPS to be numeric values
   group_by(State,stateFIPS,Date) %>%
-  summarise(confirmedcases = sum(confirmedcases)) %>%
+  summarise(confirmedcases = sum(confirmedcases)) %>% #Combines the cases per state and date
   filter(confirmedcases > 0) %>%
   arrange(stateFIPS,Date)
 
-StateRank <-
+StateRank <- #Assigns ranks to each state 1-51 (including DC) alphabetically
   CovidPlot %>%
   group_by(stateFIPS) %>%
   summarise(totalcases = sum(confirmedcases)) %>%
   mutate(rank = rank(stateFIPS))
 
-NewCovidPlot <-
+FullDataCOVID <- #Joins the Rank table (StateRank) and the COVID count per state per date table (CovidPlot) into one
   StateRank %>%
   select(stateFIPS,rank) %>%
   left_join(CovidPlot, by = c("stateFIPS" = "stateFIPS"))
 
-NewCovidPlot
+FullDataCOVID
 ```
 
 ### Looking at US Corona count increasing over time
 ```{r}
-#explain what this is/signifies/what it tells us after graph
-UScovid <-
-  NewCovidPlot %>%
+UScovid <- #Creates a table of the covid count per data regardless of state
+  FullDataCOVID %>%
   group_by(Date) %>%
   summarise(casecount = sum(confirmedcases))
 UScovid
-ggplot(UScovid,aes(x=Date,y=casecount))+geom_point(aes(x=Date,y=casecount))
+UScovid %>% #Displays a covid count over time graph for the United States
+  ggplot(aes(x=Date,y=casecount))+
+  geom_point(aes(x=Date,y=casecount))
 ```
 
 ### Looking at the Number of Cases by State
 To start, we wanted to look at the number of cases in each state. We used the state abbreviation and added the confirmed cases per county together to find the total count for each state. First is the table showing the state and coronavirus case count, and second is a bar graph illustrating the number of coronavirus cases per state.
 ```{r}
-sumStates <-
-  NewCovidPlot %>%
+sumStates <- #Creates a table of the total number of cases per state
+  FullDataCOVID %>%
   group_by(State, rank) %>%
   summarise(count = max(confirmedcases))
 sumStates
-ggplot(data=sumStates,aes(x=State,y=count))+geom_bar(stat='identity',position='stack')+theme(axis.text.x = element_text(angle = 90))
+sumStates %>% #Creates a bar graph to show the COVID count per state
+  ggplot(aes(x=State,y=count))+
+  geom_bar(stat='identity',position='stack')+
+  theme(axis.text.x = element_text(angle = 90))
 ```
 Looking at the number of coronavirus cases per state (as seen in the graph above), the state with an overwhelming number of cases in NY with NJ coming in second. The state with the least number of cases is WY. Now that we have looked the number of coronavirus cases in each state, we can look how this compares to the total state population. 
 
 ### Finding the total state population
 To compare the total population per state with the number of coronavirus cases in each state, the total population per state needs to be calculated from the ZipGeography data table.
 ```{r}
-popSum <-
+StatePop <- #This table gets the State and state populations using ZipGeography
+  #A rank is assigned to each state so that the rank corresponds with the state alphabetically just like the other tables
   ZipGeography %>%
   mutate(State = as.character(State)) %>%
   group_by(State) %>%
   filter(State != '', Population > 0) %>%
   summarise(statepop = sum(Population)) %>%
   mutate(rank = rank(State))
-popSum %>%
+StatePop %>% 
   arrange(desc(statepop))
 ```
 
 # Finding the Percent of the Population with COVID-19
 Now that we found the population with COVID-19 in each state and the total population in each state, we can find the percent of the population with COVID-19. We can do this by dividing the count (population affected by COVID-19) by the total state population. The table below shows the percent of the population affected.
 ```{r}
-CovidTotalAndPop <-
+CovidTotalAndPop <- #The tables of state population (StatePop) and the coronavirus count per state (sumStates) are joined into one big table
   sumStates %>%
   select(State,rank,count) %>%
-  left_join(popSum %>% select(rank,statepop),
+  left_join(StatePop %>% select(rank,statepop),
             by = c("rank" = "rank")) %>%
-  mutate(covid_pop_percent = count/statepop*100) %>%
-  mutate(lowcount = count <= 2000)
+  mutate(covid_pop_percent = count/statepop*100) %>% #Creates a percent per state to represent the proportion of the state population has tested positive COVID
+  mutate(lowcount = count <= 2000) #If the COVID count in the state is less than or equal to 2000, then TRUE will be assigned to the lowcount classifier. Otherwise, FALSE will be assigned.
 
 CovidTotalAndPop %>%
   arrange(covid_pop_percent)
-
-ggplot(CovidTotalAndPop,aes(x=State,y=covid_pop_percent))+ geom_bar(stat='identity',position='stack')+ geom_smooth(method = 'lm')+theme(axis.text.x = element_text(angle = 90))
+CovidTotalAndPop %>% #Creates a bar graph that shows the COVID count in each state
+  ggplot(aes(x=State,y=covid_pop_percent))+
+  geom_bar(stat='identity',position='stack')+
+  geom_smooth(method = 'lm')+
+  theme(axis.text.x = element_text(angle = 90))
 ```
 The bar graph illustrates the percent of coronavirus victims as a percent of the total state population for each state. Similar to the bar graph that depicted coronavirus cases and state, the state with the largest percent of the population with COVID-19 is NY with NJ coming in second again. The state with the lowest percent is WV.
 
 
 ```{r}
-ggplot(CovidTotalAndPop,aes(x=count,y=covid_pop_percent))+geom_point(aes(x=count,y=covid_pop_percent))+aes(size=statepop)
+CovidTotalAndPop %>% #Creates a scatterplot that shows the COVID count per state and the percent of the population who tested positive for COVID-19.
+  #The size of the glyph also represents the size of the state population
+  ggplot(aes(x=count,y=covid_pop_percent,size=statepop))+
+  geom_point(aes(x=count,y=covid_pop_percent))
 ```
 
 
 ```{r}
-CovidTotalAndPop %>%
+CovidTotalAndPop %>% #Creates a graph comparing the COVID count and the state population.
+  #Each state is represented as a glyph as the state's acronym.
   filter(State != "NY") %>%
   filter(State !="NJ") %>%
-  ggplot(aes(x=count,y=statepop))+geom_text(aes(label=State))+geom_smooth(method = 'lm')+facet_wrap(~lowcount, scales='free')
+  ggplot(aes(x=count,y=statepop))+
+  geom_text(aes(label=State))+
+  facet_wrap(~lowcount, scales='free')
 ```
 
 
 ```{r}
-CovidCasesAndPop <-
-  popSum %>%
-  left_join(NewCovidPlot %>% select(rank,Date,confirmedcases),
+CovidCasesAndPop <- #Joins the full COVID data table (FullDataCOVID) and the state populations table (StatePop)
+  StatePop %>%
+  left_join(FullDataCOVID %>% select(rank,Date,confirmedcases),
              by = c("rank" = "rank"))
 CovidCasesAndPop
 
+#Scatterplots of COVID count over time are created per state
+#States are grouped by state population to make it easier to compare more populated states to each other and vice versa
+#The lower the group number, the greater the population
+#The dates displayed are from March to now because some states don't have data before March and some have extensive data before March, so filtering it makes it easier to compare and understand
 Group0 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
-  filter(max(statepop) > 10000000)
-ggplot(Group0,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
+  filter(max(statepop) > 10000000) %>%
+  filter(Date >= '2020-03-01')
+Group0 %>%
+  ggplot(aes(x=Date,y=confirmedcases))+
+  geom_point(aes(x=Date,y=confirmedcases))+
+  aes(colour = State)
+
 Group1 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
   filter(max(statepop) < 10000000) %>%
-  filter(max(statepop) > 6000000)
-ggplot(Group1,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
+  filter(max(statepop) > 6000000) %>%
+  filter(Date >= '2020-03-01')
+Group1 %>%
+  ggplot(aes(x=Date,y=confirmedcases))+
+  geom_point(aes(x=Date,y=confirmedcases))+
+  aes(colour = State)
+
 Group2 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
   filter(max(statepop) < 6000000) %>%
-  filter(max(statepop) > 5000000)
-ggplot(Group2,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
+  filter(max(statepop) > 5000000) %>%
+  filter(Date >= '2020-03-01')
+Group2 %>%
+  ggplot(aes(x=Date,y=confirmedcases))+
+  geom_point(aes(x=Date,y=confirmedcases))+
+  aes(colour = State)
+
 Group3 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
   filter(max(statepop) < 5000000) %>%
-  filter(max(statepop) > 4000000)
-ggplot(Group3,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
+  filter(max(statepop) > 4000000) %>%
+  filter(Date >= '2020-03-01')
+Group3 %>%
+  ggplot(aes(x=Date,y=confirmedcases))+
+  geom_point(aes(x=Date,y=confirmedcases))+
+  aes(colour = State)
+
 Group4 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
   filter(max(statepop) < 4000000) %>%
-  filter(max(statepop) > 2500000)
-ggplot(Group4,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
+  filter(max(statepop) > 2500000) %>%
+  filter(Date >= '2020-03-01')
+Group4 %>%
+  ggplot(aes(x=Date,y=confirmedcases))+
+  geom_point(aes(x=Date,y=confirmedcases))+
+  aes(colour = State)
+
 Group5 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
   filter(max(statepop) < 2500000) %>%
-  filter(max(statepop) > 1500000)
-ggplot(Group5,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
+  filter(max(statepop) > 1500000) %>%
+  filter(Date >= '2020-03-01')
+Group5 %>%
+  ggplot(aes(x=Date,y=confirmedcases))+
+  geom_point(aes(x=Date,y=confirmedcases))+
+  aes(colour = State)
+
 Group6 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
   filter(max(statepop) < 1500000) %>%
-  filter(max(statepop) > 1000000)
-ggplot(Group6,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
+  filter(max(statepop) > 800000) %>%
+  filter(Date >= '2020-03-01')
+Group6 %>%
+  ggplot(aes(x=Date,y=confirmedcases))+
+  geom_point(aes(x=Date,y=confirmedcases))+
+  aes(colour = State)
+
 Group7 <-
   CovidCasesAndPop %>%
   group_by(rank) %>%
-  filter(max(statepop) < 1000000) %>%
-  filter(max(statepop) > 400000)
-ggplot(Group7,aes(x=Date,y=confirmedcases))+geom_point(aes(x=Date,y=confirmedcases))+aes(colour = State)
+  filter(max(statepop) < 800000) %>%
+  filter(Date >= '2020-03-01')
+Group7 %>%
+  ggplot(aes(x=Date,y=confirmedcases))+
+  geom_point(aes(x=Date,y=confirmedcases))+
+  aes(colour = State)
+#Each graph has 5, 6, or 7 states represented
 ```
 ```{r}
-page <- "https://inkplant.com/code/state-latitudes-longitudes"
-tableList <- page %>%
+page <- "https://inkplant.com/code/state-latitudes-longitudes" #This page has a list of coordinates for each State
+tableList <- page %>% 
   read_html() %>%
   html_nodes(css = "table") %>%
   html_table(fill = TRUE)
 coordinates <- tableList[[1]]
-statecoordinates <-
+
+statecoordinates <- #Created a table that has State, Latitude, and Longitude of each State (including DC)
+  #Ranks are assigned to each state alphabetically so it can match the other tables
   coordinates[2:52,] %>%
   rename(State = X1, Latitude = X2, Longitude = X3) %>%
   mutate(State = as.character(State)) %>%
@@ -214,15 +273,17 @@ statecoordinates
 ```
 
 ```{r}
-CovidCoordinates <-
+CovidCoordinates <- #The statecoordinates table and the count of COVID cases per state (sumStates) are joined
   sumStates %>%
   select(State,count,rank) %>%
   left_join(statecoordinates %>% select(Latitude, Longitude,rank),
             by = c('rank'='rank'))
 CovidCoordinates %>%
   arrange(desc(count))
-leaflet(CovidCoordinates) %>% 
+
+leaflet(CovidCoordinates) %>% #A leaflet is created to represent the COVID count in each State
   addTiles() %>%
-  addCircleMarkers(radius = ~ log(count/10), fillOpacity = 0.5, color="red")
+  addCircleMarkers(radius = ~ log(count), fillOpacity = 0.5, color="red")
+#The glyph's size represents how many people in that state have tested positive for COVID (New York is the largest)
 ```
 
