@@ -4,15 +4,14 @@ author: "Radha Patel and Srija Pinnamaneni"
 date: "April 24, 2020"
 output: html_notebook
 ---
-Remember to look at the feedback from the draft
-
 ### Topic Overview
 
 As the spread of COVID-19 continues to disrupt normal, American life, we are interested in looking at the number of cases in each state. We would like to look at the number of cases in each state and see if there is any sort of relationship with its general population. Our research looks at the number of cases in the United States starting on 1/22/20 and ending on 4/3/20. Essentially, our main research question is: What sort of relationship does state population and number of coronavirus case in each state have (exponential, linear, no relationship, etc.)?
 
 ### Loading in necessary packages
-```{r include=FALSE}
+```{r}
 rm(list = ls())
+
 library(readr)
 library(tidyr)
 library(dplyr)
@@ -23,7 +22,7 @@ library(leaflet)
 ```
 
 ### Loading in primary dataset
-```{r include=FALSE}
+```{r}
 covid_confirmed_usafacts <- read_csv("covid_confirmed_usafacts (1).csv")
 ```
 
@@ -39,7 +38,7 @@ names(ZipGeography)
 Using the nrow function, we determined that there are 3195 cases in covid_confirmed_usafacts data table and 42741 cases in the ZipGeography data table. There are 84 variables in covid_confirmed_usafacts with the first four being countyFIPS, County Name, State, and stateFIPS. The rest of the variables are the dates starting from 1/22/20 to 4/10/20. For ZipGeography, there are 13 variables called State, Population, HousingUnits, LandArea, WaterArea, CityName, PostOfficeName, County, AreaCode, Timezone, Latitude, Longitude, and ZIP. 
 
 
-### Cleaning the Downloaded Data for Use and assigning Ranks to States for future use
+### Cleaning the Downloaded Data for Use and Assigning Ranks to States for Future use
 ```{r}
 covid_per_state <-
   covid_confirmed_usafacts %>%
@@ -72,7 +71,8 @@ FullDataCOVID <- #Joins the Rank table (StateRank) and the COVID count per state
 FullDataCOVID
 ```
 
-### Looking at US Corona count increasing over time
+### Looking at US Coronavirus Count Increasing Over Time
+Before looking at the number of COVID-19 cases in each state, it is important to understand the severity of this disease and it prevalence in the United States.Therefore, we created a scatterplot looking at the COVID-19 count in the United over time. 
 ```{r}
 UScovid <- #Creates a table of the covid count per data regardless of state
   FullDataCOVID %>%
@@ -84,6 +84,7 @@ UScovid %>% #Displays a covid count over time graph for the United States
   geom_point(aes(x=Date,y=casecount))+
   labs(title = "COVID-19 Count in United States over Time", y = "COVID-19 Count")
 ```
+Looking at the scatterplot above, it is apparently that the number of COVID-19 cases is growing exponentially over time. Therefore, looking at the percent of the population in each state with COVID-19 is relevant as researchers are scrambling to develop a mechanism to suppress this exponential rate. 
 
 ### Looking at the Number of Cases by State
 To start, we wanted to look at the number of cases in each state. We used the state abbreviation and added the confirmed cases per county together to find the total count for each state. First is the table showing the state and coronavirus case count, and second is a bar graph illustrating the number of coronavirus cases per state.
@@ -101,6 +102,46 @@ sumStates %>% #Creates a bar graph to show the COVID count per state
 ```
 Looking at the number of coronavirus cases per state (as seen in the graph above), the state with an overwhelming number of cases in NY with NJ coming in second. The state with the least number of cases is WY. Now that we have looked the number of coronavirus cases in each state, we can look how this compares to the total state population. 
 
+
+### Visualizing the COVID-19 count per state on a map
+Now that we have looked at the COVID-19 count per state, it is useful to see this visually on a map. First, we needed to find a data table with the coordinates for each state. Then, we created a leaflet map that represents how many people in that state have tested positive for COVID-19.
+```{r}
+page <- "https://inkplant.com/code/state-latitudes-longitudes" #This page has a list of coordinates for each State
+tableList <- page %>% 
+  read_html() %>%
+  html_nodes(css = "table") %>%
+  html_table(fill = TRUE)
+coordinates <- tableList[[1]]
+
+statecoordinates <- #Created a table that has State, Latitude, and Longitude of each State (including DC)
+  #Ranks are assigned to each state alphabetically so it can match the other tables
+  coordinates[2:52,] %>%
+  rename(State = X1, Latitude = X2, Longitude = X3) %>%
+  mutate(State = as.character(State)) %>%
+  mutate(Latitude = as.numeric(Latitude)) %>%
+  mutate(Longitude = as.numeric(Longitude)) %>%
+  arrange(State) %>%
+  mutate(rank = rank(State))
+statecoordinates
+```
+
+```{r}
+CovidCoordinates <- #The statecoordinates table and the count of COVID cases per state (sumStates) are joined
+  sumStates %>%
+  select(State,count,rank) %>%
+  left_join(statecoordinates %>% select(Latitude, Longitude,rank),
+            by = c('rank'='rank'))
+CovidCoordinates %>%
+  arrange(desc(count))
+
+leaflet(CovidCoordinates) %>% #A leaflet is created to represent the COVID count in each State
+  addTiles() %>%
+  addCircleMarkers(radius = ~ log(count), fillOpacity = 0.5, color="red")
+#The glyph's size represents how many people in that state have tested positive for COVID (New York is the largest)
+```
+Looking at this leaflet map, it is evident that New York has the largest number of Coronavirus victims.
+
+
 ### Finding the total state population
 To compare the total population per state with the number of coronavirus cases in each state, the total population per state needs to be calculated from the ZipGeography data table.
 ```{r}
@@ -116,51 +157,9 @@ StatePop %>%
   arrange(desc(statepop))
 ```
 
-# Finding the Percent of the Population with COVID-19
-Now that we found the population with COVID-19 in each state and the total population in each state, we can find the percent of the population with COVID-19. We can do this by dividing the count (population affected by COVID-19) by the total state population. The table below shows the percent of the population affected.
-```{r}
-CovidTotalAndPop <- #The tables of state population (StatePop) and the coronavirus count per state (sumStates) are joined into one big table
-  sumStates %>%
-  select(State,rank,count) %>%
-  left_join(StatePop %>% select(rank,statepop),
-            by = c("rank" = "rank")) %>%
-  mutate(covid_pop_percent = count/statepop*100) #Creates a percent per state to represent the proportion of the state population has tested positive COVID
+### Looking at the COVID-19 count over time in states with different population sizes 
 
-CovidTotalAndPop %>%
-  arrange(covid_pop_percent)
-CovidTotalAndPop %>% #Creates a bar graph that shows the COVID count in each state
-  ggplot(aes(x=State,y=covid_pop_percent))+
-  geom_bar(stat='identity',position='stack')+
-  geom_smooth(method = 'lm')+
-  theme(axis.text.x = element_text(angle = 90))+
-  labs(title = "Percent of State Population that has contracted COVID-19", y = "Percentage")
-```
-The bar graph illustrates the percent of coronavirus victims as a percent of the total state population for each state. Similar to the bar graph that depicted coronavirus cases and state, the state with the largest percent of the population with COVID-19 is NY with NJ coming in second again. The state with the lowest percent is WV.
-
-
-```{r}
-CovidTotalAndPop %>% #Creates a scatterplot that shows the COVID count per state and the percent of the population who tested positive for COVID-19.
-  #The size of the glyph also represents the size of the state population
-  ggplot(aes(x=count,y=covid_pop_percent,size=statepop))+
-  geom_point(aes(x=count,y=covid_pop_percent))+
-  labs(title = "Count vs Percent of Population that has COVID-19 per State",
-       x = "COVID-19 Count", y = "Percentage", size = "State Population")
-```
-
-
-```{r}
-CovidTotalAndPop %>% #Creates a graph comparing the COVID count and the state population.
-  #Each state is represented as a glyph as the state's acronym.
-  #Removed New York and New Jersey because they are outliers
-  filter(State != "NY") %>%
-  filter(State !="NJ") %>%
-  ggplot(aes(x=count,y=statepop))+
-  geom_text(aes(label=State),check_overlap = TRUE)+
-  labs(title = "COVID-19 Count vs Population of State (excluding outliers)",
-       x = "COVID-19 Count", y = "State Population")
-```
-
-
+Now that we have calculated the population for each state, we can look at the rate of COVID-19 in each state. We decided to create scatterplots that illustrate the rate of COVID-19 based on population size. 8 scatterplots were created with the date and confirmed COVID-19 cases.
 ```{r}
 CovidCasesAndPop <- #Joins the full COVID data table (FullDataCOVID) and the state populations table (StatePop)
   StatePop %>%
@@ -267,38 +266,55 @@ Below800K %>%
   labs(title = "COVID-19 over time in states with a population below 800K", y = "COVID-19 Count")
 #Each graph has 5, 6, or 7 states represented
 ```
-```{r}
-page <- "https://inkplant.com/code/state-latitudes-longitudes" #This page has a list of coordinates for each State
-tableList <- page %>% 
-  read_html() %>%
-  html_nodes(css = "table") %>%
-  html_table(fill = TRUE)
-coordinates <- tableList[[1]]
+Looking at these graphs, it is evident that most states, even in comparison other similarly populated states, have a similar COVID-19 count rate. However, there are a few states that have a significantly faster rate in comparison to other similarly populated states. These include New York, New Jersey, and Washington.
 
-statecoordinates <- #Created a table that has State, Latitude, and Longitude of each State (including DC)
-  #Ranks are assigned to each state alphabetically so it can match the other tables
-  coordinates[2:52,] %>%
-  rename(State = X1, Latitude = X2, Longitude = X3) %>%
-  mutate(State = as.character(State)) %>%
-  mutate(Latitude = as.numeric(Latitude)) %>%
-  mutate(Longitude = as.numeric(Longitude)) %>%
-  arrange(State) %>%
-  mutate(rank = rank(State))
-statecoordinates
-```
+### Looking at the relationship between COVID-19 Count in each State and the State's Population
 
+Since we determined that the states with the highest COVID-19 count are New York and New Jersey, we decided to look at the relationship between COVID-19 count and the state's population for the rest of the country. The glyph in the graph below is the state's abbreviation.
 ```{r}
-CovidCoordinates <- #The statecoordinates table and the count of COVID cases per state (sumStates) are joined
+CovidTotalAndPop <- #The tables of state population (StatePop) and the coronavirus count per state (sumStates) are joined into one big table
   sumStates %>%
-  select(State,count,rank) %>%
-  left_join(statecoordinates %>% select(Latitude, Longitude,rank),
-            by = c('rank'='rank'))
-CovidCoordinates %>%
-  arrange(desc(count))
+  select(State,rank,count) %>%
+  left_join(StatePop %>% select(rank,statepop),
+            by = c("rank" = "rank")) %>%
+  mutate(covid_pop_percent = count/statepop*100) #Creates a percent per state to represent the proportion of the state population has tested positive COVID
 
-leaflet(CovidCoordinates) %>% #A leaflet is created to represent the COVID count in each State
-  addTiles() %>%
-  addCircleMarkers(radius = ~ log(count), fillOpacity = 0.5, color="red")
-#The glyph's size represents how many people in that state have tested positive for COVID (New York is the largest)
+CovidTotalAndPop %>% #Creates a graph comparing the COVID count and the state population.
+  #Each state is represented as a glyph as the state's acronym.
+  #Removed New York and New Jersey
+  filter(State != "NY") %>%
+  filter(State !="NJ") %>%
+  ggplot(aes(x=count,y=statepop))+
+  geom_text(aes(label=State),check_overlap = TRUE)+
+  labs(title = "COVID-19 Count vs Population of State (excluding outliers)",
+       x = "COVID-19 Count", y = "State Population")
+```
+Looking at the graph above, there seems to be a positive correlation between State Population and COVID-19 Count without looking at New York and New Jersey. Essentially, as COVID-19 Count increases, the state population increases as well. This means that states with a large population will most likely have a large COVID-19 count.
+
+# Finding the Percent of the Population with COVID-19
+After looking at various relatinoships using total population and coronavirus count, we can find the percent of the population with COVID-19. We can do this by dividing the count (population affected by COVID-19) by the total state population. The table below shows the percent of the population affected.
+```{r}
+CovidTotalAndPop %>%
+  arrange(covid_pop_percent)
+CovidTotalAndPop %>% #Creates a bar graph that shows the COVID count in each state
+  ggplot(aes(x=State,y=covid_pop_percent))+
+  geom_bar(stat='identity',position='stack')+
+  geom_smooth(method = 'lm')+
+  theme(axis.text.x = element_text(angle = 90))+
+  labs(title = "Percent of State Population that has contracted COVID-19", y = "Percentage")
+```
+The bar graph illustrates the percent of coronavirus victims as a percent of the total state population for each state. Similar to the bar graph that depicted coronavirus cases and state, the state with the largest percent of the population with COVID-19 is NY with NJ coming in second again. The state with the lowest percent is WV.
+
+### Looking at the COVID-19 Count and the Percent of the State Population who Tested Positive for COVID-19.
+
+To conclude our analysis, we looked at the COVID-19 Count and the percent of the population who tested postive for COVID-19. Looking at the scatterplot below, there seems to be a postive correlation between percent of the state population and COVID-19 count. However, there seems to be an outlier toward the top right of the scatterplot that corresponds to New York.
+```{r}
+CovidTotalAndPop %>% #Creates a scatterplot that shows the COVID count per state and the percent of the population who tested positive for COVID-19.
+  #The size of the glyph also represents the size of the state population
+  ggplot(aes(x=count,y=covid_pop_percent,size=statepop))+
+  geom_point(aes(x=count,y=covid_pop_percent))+
+  labs(title = "Count vs Percent of Population that has COVID-19 per State",
+       x = "COVID-19 Count", y = "Percentage", size = "State Population")
 ```
 
+### Conclusion
