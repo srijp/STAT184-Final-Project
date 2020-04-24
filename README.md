@@ -1,4 +1,3 @@
-# STAT 184: Final Project
 Radha Patel and Srija Pinnamaneni
 April 24, 2020
 
