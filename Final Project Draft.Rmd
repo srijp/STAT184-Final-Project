@@ -42,7 +42,7 @@ Using the nrow function, we determined that there are 3195 cases in covid_confir
 ```{r}
 covid_per_state <-
   covid_confirmed_usafacts %>%
-  filter(`countyFIPS` > 100) #Filters out the data for all the states that are separated by county
+  filter(! grepl("located", `County Name`, ignore.case = TRUE)) #Filters out the data for all the states that are separated by county
 drop <- c('countyFIPS','County Name')
 newcovid <- covid_per_state[ , !(names(covid_per_state) %in% drop)] #Drops countyFIPS and County Name because we do not have use for county data
 
