@@ -4,6 +4,7 @@ author: "Radha Patel and Srija Pinnamaneni"
 date: "April 24, 2020"
 output: html_notebook
 ---
+
 ### Topic Overview
 
 As the spread of COVID-19 continues to disrupt normal, American life, we are interested in looking at the number of cases in each state. We would like to look at the number of cases in each state and see if there is any sort of relationship with its general population. Our research looks at the number of cases in the United States starting on 1/22/20 and ending on 4/3/20. Essentially, our main research question is: What sort of relationship does state population and number of coronavirus case in each state have (positive, negative, or no correlation.)?
