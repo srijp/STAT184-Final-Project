@@ -1,7 +1,7 @@
 ---
 title: 'Final Project: Guidance Document'
-author: "Author Name(s)"
-date: "Due December 17, 2019"
+author: "Radha Pate. and Srija Pinnamaneni"
+date: "April 24, 2020"
 output:  html_notebook
 ---
 
@@ -12,16 +12,19 @@ output:  html_notebook
 
 # Final Project Requirements
 
-
 ### Data Access
 
 *Description: (1) Analysis includes at least two different data sources. (2) Primary data source may NOT be loaded from an R package--though supporting data may. (3) Access to all data sources is contained within the analysis. (4) Imported data is inspected at beginning of analysis using one or more R functions: e.g., str, glimpse, head, tail, names, nrow, etc*
 
 (A) .Rmd Line numbers where at least two different data sources are imported:  
 
+Line 19 (DataComputing Package - ZipGeography dataset)
 
-(B) .Rmd Line numbers for inspecting data intake:  
+Lines 25 to 27 (loading in primary dataset)
 
+(B) .Rmd Line numbers for inspecting data intake: 
+
+Lines 31 to 37
 
 ### Data Wrangling (5 out of 8 required)
 
@@ -30,27 +33,29 @@ output:  html_notebook
 
 (A) .Rmd Line number(s) for general data wrangling: 
 
+Lines 62 to 64 is one example. 
 
 (B) .Rmd Line number(s) for a join operation: 
 
+Lines 66 to 69
 
 (C) .Rmd Line number(s) for a spread or gather operation (or equivalent):
 
+Lines 49 to 51
 
 (D) .Rmd Line number(s) for use of regular expressions: 
 
+Line 45
 
 (E) .Rmd Line number(s) for use of reduction and/or transformation functions: 
 
+Line 63 or Line 95
 
 (F) .Rmd Line number(s) for use of user-defined functions: 
 
-
 (G) .Rmd Line number(s) for use of loops and/or control flow: 
 
-
 (H) .Rmd Line number(s) for use of machine learning (not "wrangling" but scored here): 
-
 
 
 ### Data Visualization (3 of 5 required)
@@ -58,17 +63,21 @@ output:  html_notebook
 *Description: Students need not use every function and method introduced in STAT 184, but clear demonstration of proficiency should include a range of useful of data visualizations that are (1) relevant to stated research question for the analysis, (2) include at least one effective display of many--at least 3--variables, and (3) include 3 of the following 5 visualization techniques learned in STAT 184: (+) use of multiple geoms such as points, density, lines, segments, boxplots, bar charts, histograms, etc (+) use of multiple aesthetics--not necessarily all in the same graph--such as color, size, shape, x/y position, facets, etc (+) layered graphics such as points and accompanying smoother, points and accompanying boxplots, overlaid density distributions, etc (+) leaflet maps (+) decision tree and/or dendogram displaying machine learning model results*
 
 
-(A) .Rmd Line number(s) for use of mulitple different geoms:  
+(A) .Rmd Line number(s) for use of mulitple different geoms: 
 
-(B) .Rmd Line number(s) for use of multiple aesthetics:  
+Line 84 (geom_point), line 99 (geom_bar), and line 287 (geom_smooth)
+
+(B) .Rmd Line number(s) for use of multiple aesthetics: 
+
+Line 182 (color), line 303 (size), and line 316 (label)
 
 (C) .Rmd Line number(s) for use of layered graphics:  
 
 (D) .Rmd Line number(s) for use of leaflet maps:  
 
+Lines 137 to 139
+
 (E) .Rmd Line number(s) for use of decision tree or dendogram results:    
-
-
 
 
 ### Other requirements (Nothing for you to report in this Guidance Document)
