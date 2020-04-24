@@ -6,7 +6,7 @@ output: html_notebook
 ---
 ### Topic Overview
 
-As the spread of COVID-19 continues to disrupt normal, American life, we are interested in looking at the number of cases in each state. We would like to look at the number of cases in each state and see if there is any sort of relationship with its general population. Our research looks at the number of cases in the United States starting on 1/22/20 and ending on 4/3/20. Essentially, our main research question is: What sort of relationship does state population and number of coronavirus case in each state have (exponential, linear, no relationship, etc.)?
+As the spread of COVID-19 continues to disrupt normal, American life, we are interested in looking at the number of cases in each state. We would like to look at the number of cases in each state and see if there is any sort of relationship with its general population. Our research looks at the number of cases in the United States starting on 1/22/20 and ending on 4/3/20. Essentially, our main research question is: What sort of relationship does state population and number of coronavirus case in each state have (positive, negative, or no correlation.)?
 
 ### Loading in necessary packages
 ```{r}
@@ -268,9 +268,9 @@ Below800K %>%
 ```
 Looking at these graphs, it is evident that most states, even in comparison other similarly populated states, have a similar COVID-19 count rate. However, there are a few states that have a significantly faster rate in comparison to other similarly populated states. These include New York, New Jersey, and Washington.
 
-### Looking at the relationship between COVID-19 Count in each State and the State's Population
 
-Since we determined that the states with the highest COVID-19 count are New York and New Jersey, we decided to look at the relationship between COVID-19 count and the state's population for the rest of the country. The glyph in the graph below is the state's abbreviation.
+# Finding the Percent of the Population with COVID-19
+After looking at various relatinoships using total population and coronavirus count, we can find the percent of the population with COVID-19. We can do this by dividing the count (population affected by COVID-19) by the total state population. The table below shows the percent of the population affected.
 ```{r}
 CovidTotalAndPop <- #The tables of state population (StatePop) and the coronavirus count per state (sumStates) are joined into one big table
   sumStates %>%
@@ -279,21 +279,6 @@ CovidTotalAndPop <- #The tables of state population (StatePop) and the coronavir
             by = c("rank" = "rank")) %>%
   mutate(covid_pop_percent = count/statepop*100) #Creates a percent per state to represent the proportion of the state population has tested positive COVID
 
-CovidTotalAndPop %>% #Creates a graph comparing the COVID count and the state population.
-  #Each state is represented as a glyph as the state's acronym.
-  #Removed New York and New Jersey
-  filter(State != "NY") %>%
-  filter(State !="NJ") %>%
-  ggplot(aes(x=count,y=statepop))+
-  geom_text(aes(label=State),check_overlap = TRUE)+
-  labs(title = "COVID-19 Count vs Population of State (excluding outliers)",
-       x = "COVID-19 Count", y = "State Population")
-```
-Looking at the graph above, there seems to be a positive correlation between State Population and COVID-19 Count without looking at New York and New Jersey. Essentially, as COVID-19 Count increases, the state population increases as well. This means that states with a large population will most likely have a large COVID-19 count.
-
-# Finding the Percent of the Population with COVID-19
-After looking at various relatinoships using total population and coronavirus count, we can find the percent of the population with COVID-19. We can do this by dividing the count (population affected by COVID-19) by the total state population. The table below shows the percent of the population affected.
-```{r}
 CovidTotalAndPop %>%
   arrange(covid_pop_percent)
 CovidTotalAndPop %>% #Creates a bar graph that shows the COVID count in each state
@@ -307,7 +292,7 @@ The bar graph illustrates the percent of coronavirus victims as a percent of the
 
 ### Looking at the COVID-19 Count and the Percent of the State Population who Tested Positive for COVID-19.
 
-To conclude our analysis, we looked at the COVID-19 Count and the percent of the population who tested postive for COVID-19. Looking at the scatterplot below, there seems to be a postive correlation between percent of the state population and COVID-19 count. However, there seems to be an outlier toward the top right of the scatterplot that corresponds to New York.
+Then, we looked at the COVID-19 Count and the percent of the population who tested postive for COVID-19. Looking at the scatterplot below, there seems to be a postive correlation between percent of the state population and COVID-19 count. However, there seems to be an outlier toward the top right of the scatterplot that corresponds to New York.
 ```{r}
 CovidTotalAndPop %>% #Creates a scatterplot that shows the COVID count per state and the percent of the population who tested positive for COVID-19.
   #The size of the glyph also represents the size of the state population
@@ -317,4 +302,23 @@ CovidTotalAndPop %>% #Creates a scatterplot that shows the COVID count per state
        x = "COVID-19 Count", y = "Percentage", size = "State Population")
 ```
 
+### Looking at the relationship between COVID-19 Count in each State and the State's Population
+
+To conclude our analysis and after we determined that the states with the highest COVID-19 count are New York and New Jersey, we decided to look at the relationship between COVID-19 count and the state's population for the rest of the country. The glyph in the graph below is the state's abbreviation.
+```{r}
+
+CovidTotalAndPop %>% #Creates a graph comparing the COVID count and the state population.
+  #Each state is represented as a glyph as the state's acronym.
+  #Removed New York and New Jersey
+  filter(State != "NY") %>%
+  filter(State !="NJ") %>%
+  ggplot(aes(x=count,y=statepop))+
+  geom_text(aes(label=State),check_overlap = TRUE)+
+  labs(title = "COVID-19 Count vs Population of State (excluding outliers)",
+       x = "COVID-19 Count", y = "State Population")
+```
+Looking at the graph above, there seems to be a positive correlation between State Population and COVID-19 Count without looking at New York and New Jersey. Essentially, as COVID-19 Count increases, the state population increases as well. This means that states with a large population will most likely have a large COVID-19 count.
+
 ### Conclusion
+To summarize our analysis of these data sets, we first looked at the rate of COVID-19 and established that this is a highly prevalent disease in the United States. This high prevalence of COVID-19 is also seen in the leaflet map and bar graph illustrating the number of COVID-19 cases per state. It was concluded from these graphs that NY and NJ have the highest COVID-19 counts. Then, we looked at the rate of COVID-19 when grouping states by population size. We found that in comparison to states with a similar population, NY, NJ, and WA had the highest COVID-19 rates. Then, we calculated the percent of the state population that had COVID-19. After analyzing this percentage using a bar graph and scatterplot. We decided to create a scatterplot without NY and NJ because the other displays indicated that they were outliers. In the end, we determined that there is a positive correlation between COVID-19 Count and a state's population with the exception of New York and New Jersey.
+
