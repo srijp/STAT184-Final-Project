@@ -1,6 +1,6 @@
 # STAT 184: Final Project
-## Radha Patel and Srija Pinnamaneni
-## April 24, 2020
+Radha Patel and Srija Pinnamaneni
+April 24, 2020
 
 ### Topic Overview
 
@@ -265,7 +265,7 @@ Below800K %>%
 ```
 Looking at these graphs, it is evident that most states, even in comparison other similarly populated states, have a similar COVID-19 count rate. However, there are a few states that have a significantly faster rate in comparison to other similarly populated states. These include New York, New Jersey, and Washington.
 
-# Finding the Percent of the Population with COVID-19
+## Finding the Percent of the Population with COVID-19
 After looking at various relatinoships using total population and coronavirus count, we can find the percent of the population with COVID-19. We can do this by dividing the count (population affected by COVID-19) by the total state population. The table below shows the percent of the population affected.
 ```{r}
 CovidTotalAndPop <- #The tables of state population (StatePop) and the coronavirus count per state (sumStates) are joined into one big table
