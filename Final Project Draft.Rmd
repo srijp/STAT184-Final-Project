@@ -293,6 +293,7 @@ The bar graph illustrates the percent of coronavirus victims as a percent of the
 ### Looking at the COVID-19 Count and the Percent of the State Population who Tested Positive for COVID-19.
 
 Then, we looked at the COVID-19 Count and the percent of the population who tested postive for COVID-19. Looking at the scatterplot below, there seems to be a postive correlation between percent of the state population and COVID-19 count. However, there seems to be an outlier toward the top right of the scatterplot that corresponds to New York.
+
 ```{r}
 CovidTotalAndPop %>% #Creates a scatterplot that shows the COVID count per state and the percent of the population who tested positive for COVID-19.
   #The size of the glyph also represents the size of the state population
@@ -306,7 +307,6 @@ CovidTotalAndPop %>% #Creates a scatterplot that shows the COVID count per state
 
 To conclude our analysis and after we determined that the states with the highest COVID-19 count are New York and New Jersey, we decided to look at the relationship between COVID-19 count and the state's population for the rest of the country. The glyph in the graph below is the state's abbreviation.
 ```{r}
-
 CovidTotalAndPop %>% #Creates a graph comparing the COVID count and the state population.
   #Each state is represented as a glyph as the state's acronym.
   #Removed New York and New Jersey
