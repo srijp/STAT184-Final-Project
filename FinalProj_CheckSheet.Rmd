@@ -1,6 +1,6 @@
 ---
 title: 'Final Project: Guidance Document'
-author: "Radha Patle and Srija Pinnamaneni"
+author: "Radha Pate. and Srija Pinnamaneni"
 date: "April 24, 2020"
 output:  html_notebook
 ---
@@ -44,6 +44,8 @@ Lines 66 to 69
 Lines 49 to 51
 
 (D) .Rmd Line number(s) for use of regular expressions: 
+
+Line 45
 
 (E) .Rmd Line number(s) for use of reduction and/or transformation functions: 
 
